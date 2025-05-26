@@ -1,0 +1,25 @@
+{
+  "name": "nodejs",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Lakshyakumar65/EJS.git"
+  },
+  "author": "LAKSHYA KUMAR",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/Lakshyakumar65/EJS/issues"
+  },
+  "homepage": "https://github.com/Lakshyakumar65/EJS#readme",
+  "description": "",
+  "dependencies": {
+    "body-parser": "^2.2.0",
+    "ejs": "^3.1.10",
+    "express": "^5.1.0",
+    "mongoose": "^8.15.0"
+  }
+}

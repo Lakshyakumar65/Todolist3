@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="box">
+        <h1 id="heading">📝 Todo List</h1>
+    </div>
+    
+    <div class="box">
+        <!-- Task List -->
+        <div id="taskList">
+            <% if (tasks && tasks.length > 0) { %>
+                <% tasks.forEach(function(task) { %>
+                    <div class="item" data-id="<%= task._id %>">
+                        <div class="task-content">
+                            <span class="task-name priority-<%= task.priority %>"><%= task.name %></span>
+                            <span class="priority-badge priority-<%= task.priority %>"><%= task.priority %></span>
+                        </div>
+                        
+                        <div class="task-actions">
+                            <button class="edit-btn" onclick="editTask('<%= task._id %>', '<%= task.name %>', '<%= task.priority %>')" title="Edit Task">
+                                <i class="fas fa-pencil-alt"></i>
+                            </button>
+                            <button class="delete-btn" onclick="deleteTask('<%= task._id %>')" title="Delete Task">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                <% }) %>
+            <% } else { %>
+                <div class="empty-state">
+                    <i class="fas fa-clipboard-list"></i>
+                    <p>No tasks yet. Add your first task below!</p>
+                </div>
+            <% } %>
+        </div>
+        
+        <!-- Add New Task Form -->
+        <form id="addTaskForm" class="add-form">
+            <div class="form-group">
+                <input type="text" id="taskName" name="taskName" placeholder="Enter your task..." maxlength="100">
+                <select id="priority" name="priority">
+                    <option value="low">Low Priority</option>
+                    <option value="medium" selected>Medium Priority</option>
+                    <option value="high">High Priority</option>
+                </select>
+                <button type="submit" id="addBtn">
+                    <i class="fas fa-plus"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Edit Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Edit Task</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <form id="editTaskForm">
+                <input type="hidden" id="editTaskId">
+                <div class="form-group">
+                    <label for="editTaskName">Task Name:</label>
+                    <input type="text" id="editTaskName" name="name" placeholder="Enter task name..." maxlength="100" required>
+                </div>
+                <div class="form-group">
+                    <label for="editPriority">Priority:</label>
+                    <select id="editPriority" name="priority">
+                        <option value="low">Low Priority</option>
+                        <option value="medium">Medium Priority</option>
+                        <option value="high">High Priority</option>
+                    </select>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" onclick="closeEditModal()" class="cancel-btn">Cancel</button>
+                    <button type="submit" class="save-btn">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Custom Alert -->
+    <div id="customAlert" class="alert">
+        <div class="alert-content">
+            <span id="alertIcon"></span>
+            <span id="alertMessage"></span>
+            <button id="alertClose" onclick="closeAlert()">&times;</button>
+        </div>
+    </div>
+
+    <script>
+        // Add Task
+        document.getElementById('addTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const taskName = document.getElementById('taskName').value.trim();
+            const priority = document.getElementById('priority').value;
+            
+            if (!taskName) {
+                showAlert('error', 'Please enter a task name!');
+                return;
+            }
+            
+            // Submit form normally without AJAX
+            const form = this;
+            form.method = 'POST';
+            form.action = '/';
+            form.submit();
+        });
+
+        // Edit Task
+        function editTask(id, name, priority) {
+            document.getElementById('editTaskId').value = id;
+            document.getElementById('editTaskName').value = name;
+            document.getElementById('editPriority').value = priority;
+            document.getElementById('editModal').style.display = 'block';
+        }
+
+        document.getElementById('editTaskForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const taskId = document.getElementById('editTaskId').value;
+            const taskName = document.getElementById('editTaskName').value.trim();
+            const priority = document.getElementById('editPriority').value;
+            
+            if (!taskName) {
+                showAlert('error', 'Task title cannot be empty!');
+                return;
+            }
+            
+            fetch(`/update/${taskId}`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ name: taskName, priority: priority })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showAlert('success', data.message);
+                    closeEditModal();
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    showAlert('error', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showAlert('error', 'Something went wrong. Please try again.');
+            });
+        });
+
+        // Delete Task
+        function deleteTask(taskId) {
+            if (confirm('Are you sure you want to delete this task?')) {
+                // Create a form and submit it
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = '/delete';
+                
+                const input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'checkbox1';
+                input.value = taskId;
+                
+                form.appendChild(input);
+                document.body.appendChild(form);
+                form.submit();
+            }
+        }
+
+        // Modal Functions
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        // Alert Functions
+        function showAlert(type, message) {
+            const alert = document.getElementById('customAlert');
+            const icon = document.getElementById('alertIcon');
+            const messageEl = document.getElementById('alertMessage');
+            
+            alert.className = `alert alert-${type}`;
+            icon.innerHTML = type === 'success' ? '<i class="fas fa-check-circle"></i>' : '<i class="fas fa-exclamation-circle"></i>';
+            messageEl.textContent = message;
+            
+            alert.style.display = 'block';
+            
+            // Auto close after 3 seconds
+            setTimeout(() => {
+                closeAlert();
+            }, 3000);
+        }
+
+        function closeAlert() {
+            document.getElementById('customAlert').style.display = 'none';
+        }
+
+        // Close modal when clicking outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('editModal');
+            if (event.target === modal) {
+                closeEditModal();
+            }
+        }
+    </script>
+</body>
+</html>
