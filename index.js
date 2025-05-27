@@ -29,7 +29,7 @@ const taskSchema = new mongoose.Schema({
 
 const Task = mongoose.model("Task", taskSchema);
 
-// GET - Display all tasks
+// Display req
 app.get("/", function(req, res) {
     Task.find({})
         .sort({ createdAt: -1 }) // Sort by newest first
@@ -109,25 +109,38 @@ app.put("/update/:id", function(req, res) {
         });
     });
 });
-
-// POST - Delete task using checkbox
-app.post("/delete", function(req, res) {
-    const checkedItemId = req.body.checkbox1;
+//delete task 
+app.delete("/delete/:id", function(req, res) {
+    const taskId = req.params.id;
     
-    if (!checkedItemId) {
-        return res.redirect("/");
+    if (!taskId) {
+        return res.json({ 
+            success: false, 
+            message: "Task ID is required!" 
+        });
     }
     
-    Task.findByIdAndDelete(checkedItemId)
+    Task.findByIdAndDelete(taskId)
         .then((deletedTask) => {
-            if (deletedTask) {
-                console.log("Task deleted");
+            if (!deletedTask) {
+                return res.json({ 
+                    success: false, 
+                    message: "Task not found!" 
+                });
             }
-            res.redirect("/");
+            console.log("Task deleted:", deletedTask.name);
+            res.json({ 
+                success: true, 
+                message: "Task deleted successfully!",
+                taskId: taskId
+            });
         })
         .catch(err => {
             console.error("Error deleting task:", err);
-            res.redirect("/");
+            res.json({ 
+                success: false, 
+                message: "Error deleting task. Please try again." 
+            });
         });
 });
 
